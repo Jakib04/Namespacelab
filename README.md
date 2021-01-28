@@ -1,14 +1,28 @@
 # Namespacelab
 
+First we will create 2 namespace.
 
 ```bash
 ip netns add namespace1
 ip netns add namespace2
+```
+```bash
 
+```
 
+We can verify that inside the namespace, only the loopback interface has been set.
+
+```bash
 ip netns exec namespace1 \
         ip address show
+```
 
+<br> 
+<img src="Images/1.png" /> <br> <br>
+
+At this point, we can start creating the veth pairs and associating one of their sides to their respective namespaces.
+
+```bash
 # Create the two pairs.
 ip link add veth1 type veth peer name br-veth1
 ip link add veth2 type veth peer name br-veth2
@@ -17,9 +31,18 @@ ip link add veth2 type veth peer name br-veth2
 # with the corresponding namespace
 ip link set veth1 netns namespace1
 ip link set veth2 netns namespace2
+```
+Now that the namespaces have an additional interface.
 
+```bash
 ip netns exec namespace1 \
         ip address show
+```
+
+<br> 
+<img src="Images/2.png" /> <br> <br>
+
+
 
 
 ip netns exec namespace1 \
