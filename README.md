@@ -6,9 +6,7 @@ First we will create 2 namespace.
 ip netns add namespace1
 ip netns add namespace2
 ```
-```bash
 
-```
 
 We can verify that inside the namespace, only the loopback interface has been set.
 
@@ -32,7 +30,7 @@ ip link add veth2 type veth peer name br-veth2
 ip link set veth1 netns namespace1
 ip link set veth2 netns namespace2
 ```
-Now that the namespaces have an additional interface.
+Now  the namespaces have an additional interface.
 
 ```bash
 ip netns exec namespace1 \
@@ -44,65 +42,180 @@ ip netns exec namespace1 \
 
 
 
+Let assign IP address to the veth interfaces.
 
+```bash
 ip netns exec namespace1 \
         ip addr add 192.168.1.11/24 dev veth1
-
-ip netns exec namespace1 \
-        ip address show
 
 ip netns exec namespace2 \
         ip addr add 192.168.1.12/24 dev veth2
 
+ip netns exec namespace1 \
+        ip address show
+
+
+```
+<br> 
+<img src="Images/3.png" /> <br> <br>
+
+
+
+
+Although we have both IPs and interfaces set, we can’t establish communication with them.
+
+That’s because there’s no interface in the default namespace that can send the traffic to those namespaces.
+
+With the creation of the bridge device, we’re then able to provide the necessary routing, properly forming the network.
+
+
+```bash
 ip link add name br1 type bridge
 ip link set br1 up
+
+```
+
+Confirming that the device is created.
+```bash
 ip link | grep br1
+```
 
+<br> 
+<img src="Images/4.png" /> <br> <br>
 
+With the bridge created, now it’s time to connect the bridge-side of the veth pair to the bridge device.
+Set the bridge veths from the default namespace up.
 
+```bash
 ip link set br-veth1 up
 ip link set br-veth2 up
+```
+Set the veths from the namespaces up too.
+```bash
 
 ip netns exec namespace1 \
         ip link set veth1 up
 ip netns exec namespace2 \
         ip link set veth2 up
 
-# Add the br-veth* interfaces to the bridge
-# by setting the bridge device as their master.
+```
+
+Add the br-veth interfaces to the bridge by setting the bridge device as their master.
+
+```bash
 ip link set br-veth1 master br1
 ip link set br-veth2 master br1
+```
+Check that the bridge is the master of the two interfaces that we set.
 
+```bash
+bridge link show br1
+```
+
+<br> 
+<img src="Images/5.png" /> <br> <br>
+
+Now, it’s a matter of giving this bridge device an address so that we can target such IP in our machine’s routing table making it a target for connections to those interfaces that we added to it.
+
+```bash
+
+# Set the address of the `br1` interface (bridge device)
+# to 192.168.1.10/24 and also set the broadcast address
+# to 192.168.1.255 (the `+` symbol sets  the host bits to 255).
+
+ip addr add 192.168.1.10/24 brd + dev br1
+```
+We can verify that we indeed have connectivity:
+```bash
+# Check the connectivity from the default namespace (host)
 ping 192.168.1.12
+
+```
+<br> 
+<img src="Images/6.png" /> <br> <br>
+
+We can also reach the interface of the other namespace given that we have a route to it.
+
+```bash
 
 ip netns exec namespace1\
         ip route
+```
+<br> 
+<img src="Images/7.png" /> <br> <br>
 
+Let's reach the other then iface then.
+```bash
 ip netns exec namespace1 \
         ping 192.168.1.12
+```
+<br> 
+<img src="Images/8.png" /> <br> <br>
 
+```bash
+# Try to reach Google's DNS servers (8.8.8.8) from namespace1.
 
 ip netns exec namespace1 \
         ping 8.8.8.8
+```
+<br> 
+<img src="Images/9.png" /> <br> <br>
 
+Given that the routing table from namespace1 doesn’t have a default gateway, it can’t reach any other machine from outside the 
+192.168.1.0/24 range.
+
+To fix that, the first step is giving the namespaces a default gateway route. 192.168.1.10 corresponds to the address assigned to the bridge device - reachable from both namespaces, as well as the host machine.
+```bash
 ip -all netns exec \
         ip route add default via 192.168.1.10
-
+```
+Let verify it.
+```bash
 ip netns exec namespace1 \
         ip route
+```
+<br> 
+<img src="Images/10.png" /> <br> <br>
 
-
-      ip netns exec namespace1 \
+Let try to reach Google's DNS servers (8.8.8.8) now .
+```bash
+ip netns exec namespace1 \
         ping 8.8.8.8  
+```
+<br> 
+<img src="Images/11.png" /> <br> <br>
 
+Although the network is now reachable, there’s no way that we can have responses back - packets from external networks can’t be sent directly to our 192.168.1.0/24 network.
+```bash
+# iptables is the command line utility for configuring the kernel
 
-  
+# -t specifies the table to which the commands should be directed to. By default it's `filter`
+
+# -t nat select table "nat" for configuration of NAT rules.
+
+# -A specifies that we're appending a rule to the chain the we tell the name after it
+
+# -A POSTROUTING - Append a rule to the POSTROUTING chain
+
+# -s specifies a source address
+
+# -j specifies the target to jump to (what action to take)
+
+#-j MASQUERADE - the action that should take place is to 'masquerade' packets, i.e. replacing the sender's address by the router's address
+
 iptables \
         -t nat \
         -A POSTROUTING \
         -s 192.168.1.0/24 \
         -j MASQUERADE
+```
+Now everything is configured.
+
+```bash
+# Try to reach Google's DNS servers (8.8.8.8) from namespace1
 
    ip netns exec namespace1 ping 8.8.8.8   
 ```
 
+<br> 
+<img src="Images/12.png" /> <br> <br>
