@@ -222,3 +222,11 @@ Now everything is configured.
 
 <br> 
 <img src="Images/12.png" /> <br> <br>
+
+
+# Deep dive in <mark>ip route </mark>command
+
+
+
+
+Let's interpret the output above by starting with the second line. This line says that packets sent to any IP address within the subnetwork 192.168.1.0/24 must be sent through the network interface wlan0 (a wireless network ínterface) with 192.168.1.100 as the source IP address, which in this case is the IP address assigned to wlan0 via DHCP. The other parts are not so interesting: proto kernel means this entry in the routing table was created by the kernel during autoconfiguration, while scope link means the destination IP addresses within 192.168.1.0/24 are valid only on the device wlan0.
