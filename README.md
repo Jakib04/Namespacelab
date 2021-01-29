@@ -186,6 +186,9 @@ ip netns exec namespace1 \
 <img src="Images/11.png" /> <br> <br>
 
 Although the network is now reachable, there’s no way that we can have responses back - packets from external networks can’t be sent directly to our 192.168.1.0/24 network.
+
+To get around that, we can make use of NAT (network address translation) by placing an iptables rule in the POSTROUTING chain of the nat table.
+
 ```bash
 # iptables is the command line utility for configuring the kernel
 
