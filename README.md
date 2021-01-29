@@ -224,9 +224,30 @@ Now everything is configured.
 <img src="Images/12.png" /> <br> <br>
 
 
-# Deep dive in <mark>ip route </mark>command
+# Deep dive in ```ip route``` command
 
+```bash
+ip netns exec namespace1 \
+        ip route
+```
+<br> 
+<img src="Images/10.png" /> <br> <br>
 
+Let's interpret the output above.
+The first line says that the default route for any packet (i.e., the route which is taken by a packet when no other route applies) is through the network device veth1 via the default gateway (the bridge) which has the IP address 192.168.1.10
 
+ The second line says that packets sent to any IP address within the subnetwork 192.168.1.0/24 must be sent through the network interface veth1 with 192.168.1.11 as the source IP address, which in this case is the IP address assigned to veth1. 
+ 
+ "proto kernel" means this entry in the routing table was created by the kernel during autoconfiguration . It is a route added automatically when you assign an address to an interface which is not /32. Lets say in your case, you assigned an address 192.168.1.11/24 to veth1 , kernel automatically adds route to whole subnet via this interface during auto-configuration.
 
-Let's interpret the output above by starting with the second line. This line says that packets sent to any IP address within the subnetwork 192.168.1.0/24 must be sent through the network interface wlan0 (a wireless network ínterface) with 192.168.1.100 as the source IP address, which in this case is the IP address assigned to wlan0 via DHCP. The other parts are not so interesting: proto kernel means this entry in the routing table was created by the kernel during autoconfiguration, while scope link means the destination IP addresses within 192.168.1.0/24 are valid only on the device wlan0.
+The scope of a route in Linux is an indicator of the distance to the
+destination network. There can be 3 types of scope.
+
+Host - A route has host scope when it leads to a destination address on the local host.
+
+Link - A route has link scope when it leads to a destination address on the local network.
+
+Universe(Global) - A route has universe scope when it leads to addresses more than one hop away.
+
+In the example scope link means that within the network segment
+(192.168.1.0/24) of the device communication is allowed through this link.
