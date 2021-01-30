@@ -119,9 +119,7 @@ Now, it’s a matter of giving this bridge device an address so that we can targ
 
 ```bash
 
-# Set the address of the `br1` interface (bridge device)
-# to 192.168.1.10/24 and also set the broadcast address
-# to 192.168.1.255 (the `+` symbol sets  the host bits to 255).
+
 
 ip addr add 192.168.1.10/24 brd + dev br1
 ```
@@ -224,7 +222,7 @@ Now everything is configured.
 <img src="Images/12.png" /> <br> <br>
 
 
-# Deep dive in ```ip route``` command
+# Deep dive into ```ip route``` command
 
 ```bash
 ip netns exec namespace1 \
@@ -238,7 +236,7 @@ The first line says that the default route for any packet (i.e., the route which
 
  The second line says that packets sent to any IP address within the subnetwork 192.168.1.0/24 must be sent through the network interface veth1 with 192.168.1.11 as the source IP address, which in this case is the IP address assigned to veth1. 
  
- "proto kernel" means this entry in the routing table was created by the kernel during autoconfiguration . It is a route added automatically when you assign an address to an interface which is not /32. Lets say in your case, you assigned an address 192.168.1.11/24 to veth1 , kernel automatically adds route to whole subnet via this interface during auto-configuration.
+ "proto kernel" means this entry in the routing table was created by the kernel during autoconfiguration . It is a route added automatically when you assign an address to an interface. Lets say in this case, we assigned an address 192.168.1.11/24 to veth1 , kernel automatically adds route to whole subnet via this interface during auto-configuration.
 
 The scope of a route in Linux is an indicator of the distance to the
 destination network. There can be 3 types of scope.
@@ -251,3 +249,7 @@ Universe(Global) - A route has universe scope when it leads to addresses more th
 
 In the example scope link means that within the network segment
 (192.168.1.0/24) of the device communication is allowed through this link.
+
+# Assigning 192.168.1.10/32 to any interface
+
+There is only 1 IP address in 192.168.1.10/32. So there can be no other host in this network. Even there is no room for a default gateway IP address to get to other networks. So /32 is not used.
