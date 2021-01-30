@@ -1,6 +1,6 @@
 # Namespacelab
 
-First we will create 2 namespace.
+First we will create 2 namespaces.
 
 ```bash
 ip netns add namespace1
